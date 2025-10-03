@@ -1,0 +1,14 @@
+FROM node:24-slim
+WORKDIR /app
+
+ENV NODE_ENV=development
+
+# Installer toutes les dépendances (prod + dev)
+COPY package*.json ./
+COPY frontend/package*.json frontend/
+RUN npm install --workspaces
+
+# Le code source est monté en volume via docker-compose.dev.yml
+EXPOSE 3000
+
+CMD ["npm", "-w", "frontend", "run", "dev"]

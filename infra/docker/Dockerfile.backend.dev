@@ -1,0 +1,31 @@
+FROM node:24-slim
+WORKDIR /app
+
+# Dépendances système Puppeteer
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=development
+
+# Installer toutes les deps (prod + dev)
+COPY package*.json ./
+COPY backend/package*.json backend/
+RUN npm install --workspaces
+
+# Le code source est monté en volume par docker-compose.dev.yml
+EXPOSE 4000
+
+CMD ["npm", "-w", "backend", "run", "dev"]

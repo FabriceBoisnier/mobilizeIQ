@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.backend.dev
+    command: npm -w backend run dev
+    environment:
+      NODE_ENV: development
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ../backend:/app/backend
+      - /app/backend/node_modules
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.frontend.dev
+    command: npm -w frontend run dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    volumes:
+      - ../frontend:/app/frontend
+      - /app/frontend/node_modules
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"

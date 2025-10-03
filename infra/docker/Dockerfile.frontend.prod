@@ -2,28 +2,28 @@
 FROM node:24-slim AS build
 WORKDIR /app
 
-# Install deps
 COPY package*.json ./
 COPY frontend/package*.json frontend/
 RUN npm ci --workspaces
 
-# Copy source & build
 COPY . .
 RUN npm -w frontend run build
 
 # --- Runtime stage ---
 FROM node:24-slim
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-# Copy build output
-COPY --from=build /app/frontend/.next ./frontend/.next
-COPY --from=build /app/frontend/public ./frontend/public
-COPY --from=build /app/frontend/package*.json ./frontend/
+# Installer uniquement les deps prod
 COPY --from=build /app/package*.json ./
-
-# Install only prod deps
+COPY --from=build /app/frontend/package*.json ./frontend/
 RUN npm ci --omit=dev --workspaces
 
+# Copier le build Next.js
+COPY --from=build /app/frontend/.next ./frontend/.next
+COPY --from=build /app/frontend/public ./frontend/public
+
 EXPOSE 3000
+
 CMD ["npm", "-w", "frontend", "start"]
