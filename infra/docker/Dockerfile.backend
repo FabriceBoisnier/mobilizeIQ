@@ -1,0 +1,46 @@
+# --- Build stage ---
+FROM node:24-slim AS build
+WORKDIR /app
+
+# Install deps
+COPY package*.json ./
+COPY backend/package*.json backend/
+RUN npm ci --workspaces
+
+# Copy source & build
+COPY . .
+RUN npm -w backend run build && npx -w backend prisma generate
+
+# --- Runtime stage ---
+FROM node:24-slim
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Puppeteer deps (chromium headless needs them)
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy build output
+COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/prisma ./backend/prisma
+COPY --from=build /app/backend/package*.json ./backend/
+COPY --from=build /app/package*.json ./
+
+# Install only prod deps
+RUN npm ci --omit=dev --workspaces
+
+EXPOSE 4000
+CMD ["node", "backend/dist/index.js"]

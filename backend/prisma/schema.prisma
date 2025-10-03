@@ -1,0 +1,202 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Organisations principales
+model Organization {
+  id               Int               @id @default(autoincrement())
+  name             String
+  users            User[]
+  vehicles         Vehicle[]
+  sites            Site[]
+  subscriptions    Subscription[]
+  emissionReports  EmissionReport[]
+  invoices         Invoice[]
+  emissionEntries  EmissionEntry[]
+}
+
+/// Utilisateurs liés à une orga
+model User {
+  id           Int          @id @default(autoincrement())
+  orgId        Int
+  email        String       @unique
+  passwordHash String
+  role         String
+  firstName    String?
+  lastName     String?
+  phone        String?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+/// Véhicules
+model Vehicle {
+  id            Int              @id @default(autoincrement())
+  orgId         Int
+  typeId        Int
+  registration  String           @unique
+  vin           String?          @unique
+  brand         String?
+  model         String?
+  energy        String?
+  euroStandard  String?
+  firstRegDate  DateTime?
+  capacityTons  Float?
+  status        String?
+
+  organization  Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  type          VehicleType      @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  documents     VehicleDocument[]
+  alerts        VehicleAlert[]
+  odometerLogs  OdometerLog[]
+  fuelLogs      FuelLog[]
+  maintenance   MaintenanceOrder[]
+  emissionEntries EmissionEntry[]
+}
+
+/// Types de véhicules
+model VehicleType {
+  id       Int       @id @default(autoincrement())
+  label    String
+  category String
+  vehicles Vehicle[]
+}
+
+/// Documents liés à un véhicule
+model VehicleDocument {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  kind      String
+  fileUrl   String
+  issuedAt  DateTime?
+  expiresAt DateTime?
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Alertes liées à un véhicule
+model VehicleAlert {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  kind      String
+  severity  String
+  dueAt     DateTime?
+  resolvedAt DateTime?
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Relevés kilométriques
+model OdometerLog {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  readingKm Int
+  readAt    DateTime
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Logs de carburant
+model FuelLog {
+  id            Int      @id @default(autoincrement())
+  vehicleId     Int
+  volumeL       Float
+  priceTotalEur Decimal
+  supplier      String?
+  filledAt      DateTime
+  odoKm         Int?
+
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Ordres de maintenance
+model MaintenanceOrder {
+  id          Int      @id @default(autoincrement())
+  vehicleId   Int
+  title       String
+  description String?
+  status      String
+  openedAt    DateTime
+  closedAt    DateTime?
+  costEur     Decimal?
+
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Facteurs d’émission
+model EmissionFactor {
+  id          Int     @id @default(autoincrement())
+  energy      String
+  unit        String
+  factorValue Float
+  source      String?
+  version     String?
+}
+
+/// Entrées d’émission (par période/orga/véhicule)
+model EmissionEntry {
+  id          Int          @id @default(autoincrement())
+  orgId       Int
+  vehicleId   Int
+  periodStart DateTime
+  periodEnd   DateTime
+  fuelL       Float?
+  distanceKm  Float?
+  kwh         Float?
+  co2Kg       Float
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+/// Rapports d’émission (agrégés par organisation)
+model EmissionReport {
+  id          Int          @id @default(autoincrement())
+  orgId       Int
+  label       String
+  periodStart DateTime
+  periodEnd   DateTime
+  totalsJson  String
+  pdfUrl      String?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+/// Abonnements
+model Subscription {
+  id             Int          @id @default(autoincrement())
+  orgId          Int
+  plan           String
+  vehiclesQuota  Int
+  unitPriceEur   Decimal
+  status         String
+
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+/// Factures
+model Invoice {
+  id          Int          @id @default(autoincrement())
+  orgId       Int
+  amountEur   Decimal
+  periodStart DateTime
+  periodEnd   DateTime
+  pdfUrl      String?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+/// Sites (dépôts, agences…)
+model Site {
+  id        Int          @id @default(autoincrement())
+  orgId     Int
+  name      String
+  address   String
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}

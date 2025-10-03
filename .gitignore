@@ -1,0 +1,33 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+.next/
+out/
+
+# Env files
+.env
+*.env
+infra/.env
+backend/.env
+frontend/.env
+
+# DB / volumes
+*.db
+*.sqlite
+pgdata/
+redisdata/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# MacOS / system
+.DS_Store
+Thumbs.db
