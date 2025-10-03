@@ -8,6 +8,7 @@ PROD_COMPOSE = docker-compose.prod.yml
 dev:
 	@echo "🚀 Lancement de la stack en mode DEV..."
 	docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) up -d --build
+	$(MAKE) studio
 
 prod:
 	@echo "🚀 Lancement de la stack en mode PROD..."
@@ -18,3 +19,19 @@ stop:
 	- docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) rm -sf backend frontend
 	- docker compose -f $(BASE_COMPOSE) -f $(PROD_COMPOSE) rm -sf backend frontend
 	@echo "✅ Backend et frontend stoppés. DB + Redis tournent toujours."
+
+logs-back:
+	docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) logs -f backend
+
+logs-front:
+	docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) logs -f frontend
+
+logs-db:
+	docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) logs -f db
+
+logs-redis:
+	docker compose -f $(BASE_COMPOSE) -f $(DEV_COMPOSE) logs -f redis
+
+studio:
+	@echo "🔍 Ouverture de Prisma Studio..."
+	npx -w backend prisma studio
