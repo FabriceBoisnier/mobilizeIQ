@@ -35,3 +35,6 @@ logs-redis:
 studio:
 	@echo "🔍 Ouverture de Prisma Studio..."
 	npx -w backend prisma studio
+
+prisma-generate:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend npx prisma generate --schema=backend/prisma/schema.prisma
